@@ -1,0 +1,811 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>Be My Valentine 💖</title>
+
+  <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;600;700&family=Poppins:wght@400;600;700&family=Pacifico&family=Comic+Neue:wght@700&display=swap" rel="stylesheet">
+
+  <style>
+    :root{
+      --pink:#ff4d6d;
+      --pink2:#ff7aa2;
+      --bg1:#ff9a9e;
+      --bg2:#fad0c4;
+      --ink: rgba(255,255,255,0.92);
+      --shadow: 0 18px 45px rgba(0,0,0,.22);
+      --shadow2: 0 10px 25px rgba(0,0,0,.18);
+      --radius: 24px;
+    }
+
+    *{ box-sizing:border-box; }
+    html,body{ height:100%; }
+    body{
+      margin:0;
+      overflow:hidden;
+      font-family:Poppins, Heebo, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      background:
+        radial-gradient(1200px 700px at 20% 10%, rgba(255,255,255,.35), transparent 55%),
+        radial-gradient(900px 600px at 90% 25%, rgba(255,255,255,.22), transparent 60%),
+        linear-gradient(135deg, var(--bg1), var(--bg2));
+      color:var(--ink);
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    /* ===== Always-behind balloon layer ===== */
+    #balloonLayer{
+      position:fixed;
+      inset:0;
+      z-index:0;
+      pointer-events:none;
+      overflow:hidden;
+      filter:saturate(1.05);
+    }
+
+    /* ===== Foreground content ===== */
+    #screen{
+      position:relative;
+      z-index:5;
+      height:100%;
+      width:100%;
+      display:grid;
+      place-items:center;
+      padding: 18px;
+    }
+
+    /* subtle film grain */
+    #screen::before{
+      content:"";
+      position:fixed;
+      inset:-40px;
+      z-index:-1;
+      background-image: radial-gradient(rgba(255,255,255,.07) 1px, transparent 1px);
+      background-size: 6px 6px;
+      opacity:.25;
+      transform: rotate(7deg);
+      pointer-events:none;
+      mix-blend-mode: overlay;
+    }
+
+    /* ===== Main layout ===== */
+    .wrap{
+      width:min(1180px, 100%);
+      display:grid;
+      grid-template-columns: 260px minmax(320px, 1fr) 260px;
+      gap: 18px;
+      align-items:center;
+    }
+
+    .rail{
+      direction: rtl;
+
+      display:flex;
+      flex-direction:column;
+      gap: 14px;
+      align-items:stretch;
+    }
+
+    .centerCard{
+      direction: rtl;
+
+      background: linear-gradient(180deg, rgba(255,255,255,.18), rgba(255,255,255,.08));
+      border: 1px solid rgba(255,255,255,.28);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 26px 22px 22px;
+      text-align:center;
+      position:relative;
+      overflow:hidden;
+    }
+
+    .centerCard::after{
+      content:"";
+      position:absolute;
+      inset:-80px -120px auto -120px;
+      height:220px;
+      background: radial-gradient(closest-side, rgba(255,255,255,.42), transparent 70%);
+      pointer-events:none;
+      opacity:.55;
+    }
+
+    h1{
+      margin: 0 0 10px;
+      font-size: clamp(2.05rem, 3.2vw, 3.05rem);
+      line-height: 1.05;
+      text-shadow: 0 10px 25px rgba(0,0,0,.20);
+      letter-spacing: -0.5px;
+    }
+
+    .subtitle{
+      margin: 0 0 16px;
+      font-size: 0.98rem;
+      opacity:.92;
+    }
+
+    /* ===== GIF ===== */
+    .gif{
+      display:grid;
+      place-items:center;
+      margin: 10px 0 16px;
+      position:relative;
+      z-index:2;
+    }
+    .gif img{
+      width:min(310px, 85%);
+      border-radius: 18px;
+      box-shadow: var(--shadow2);
+      border: 1px solid rgba(255,255,255,.35);
+    }
+
+    /* ===== Buttons ===== */
+    .buttons{
+      position:relative;
+      display:flex;
+      gap: 12px;
+      justify-content:center;
+      align-items:center;
+      margin-top: 10px;
+      flex-wrap:wrap;
+      z-index:3;
+    }
+
+    button{
+      border:none;
+      border-radius: 20px;
+      cursor:pointer;
+      font-size: 1.08rem;
+      padding: 14px 28px;
+      transition: filter .18s ease, box-shadow .18s ease;
+      user-select:none;
+      -webkit-user-select:none;
+      touch-action: manipulation;
+    }
+
+    /* YES stays on top of NO, and grows over it */
+    #yes{
+      background: linear-gradient(135deg, var(--pink), var(--pink2));
+      color: white;
+      font-weight: 700;
+      box-shadow: 0 16px 35px rgba(255,77,109,.35), 0 10px 18px rgba(0,0,0,.15);
+      transform-origin:center;
+      position:relative;
+      z-index: 5;
+      will-change: transform, width, height, border-radius, left, top;
+    }
+
+    #no{
+      background: rgba(255,255,255,.92);
+      color: #ff4d6d;
+      font-weight: 700;
+      box-shadow: 0 12px 24px rgba(0,0,0,.14);
+      position:relative;
+      z-index: 2;
+    }
+
+    /* ===== Pro "frames" ===== */
+    .frame{
+      position:relative;
+      border-radius: 18px;
+      background: linear-gradient(135deg, rgba(255,255,255,.65), rgba(255,255,255,.22));
+      border: 1px solid rgba(255,255,255,.42);
+      box-shadow: 0 16px 34px rgba(0,0,0,.18);
+      overflow:hidden;
+      transform: translateZ(0);
+    }
+
+    .frame::before{
+      content:"";
+      position:absolute;
+      inset:0;
+      border-radius: 18px;
+      box-shadow:
+        inset 0 1px 0 rgba(255,255,255,.55),
+        inset 0 -14px 28px rgba(0,0,0,.08);
+      pointer-events:none;
+    }
+
+    .mat{
+      padding: 10px;
+      background: linear-gradient(180deg, rgba(255,255,255,.95), rgba(255,255,255,.78));
+      border-radius: 16px;
+      margin: 10px;
+      box-shadow: inset 0 0 0 1px rgba(0,0,0,.06);
+    }
+
+    .frame img{
+      width:100%;
+      aspect-ratio: 1 / 1;
+      object-fit:cover;
+      border-radius: 12px;
+      display:block;
+      box-shadow: 0 8px 18px rgba(0,0,0,.14);
+    }
+
+    .tag{
+      position:absolute;
+      left: 12px;
+      bottom: 10px;
+      font-size: .85rem;
+      padding: 7px 10px;
+      border-radius: 999px;
+      background: rgba(0,0,0,.30);
+      border: 1px solid rgba(255,255,255,.22);
+      backdrop-filter: blur(6px);
+      -webkit-backdrop-filter: blur(6px);
+    }
+
+    /* ===== Music control ===== */
+    .music{
+      position:fixed;
+      right: 14px;
+      bottom: 14px;
+      z-index: 20;
+      display:flex;
+      align-items:center;
+      gap: 10px;
+      padding: 10px 12px;
+      border-radius: 999px;
+      background: rgba(255,255,255,.16);
+      border: 1px solid rgba(255,255,255,.28);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      box-shadow: 0 12px 28px rgba(0,0,0,.16);
+    }
+    .music button{
+      padding: 10px 14px;
+      font-size: .95rem;
+      border-radius: 999px;
+      background: rgba(255,255,255,.92);
+      color: #ff4d6d;
+      font-weight: 700;
+      box-shadow: 0 10px 18px rgba(0,0,0,.12);
+    }
+    .music small{ opacity:.9; }
+
+    /* ===== Damage / rattle effects on NO ===== */
+    .hit{
+      animation: rattle .18s linear 1;
+      filter: blur(1.6px) saturate(1.25) contrast(1.05);
+    }
+    @keyframes rattle{
+      0%{ transform: translate(0,0) rotate(0deg); }
+      25%{ transform: translate(-7px, 4px) rotate(-0.6deg); }
+      50%{ transform: translate(6px,-5px) rotate(0.6deg); }
+      75%{ transform: translate(-5px, 6px) rotate(-0.4deg); }
+      100%{ transform: translate(0,0) rotate(0deg); }
+    }
+
+    .vignette{
+      position:fixed;
+      inset:0;
+      z-index: 15;
+      pointer-events:none;
+      opacity:0;
+      background:
+        radial-gradient(closest-side at 50% 50%, transparent 45%, rgba(0,0,0,.15) 100%),
+        radial-gradient(closest-side at 50% 50%, rgba(255,0,0,.22), transparent 62%);
+      transition: opacity .12s ease;
+      mix-blend-mode: multiply;
+    }
+    .vignette.on{ opacity:1; }
+
+    .cracks{
+      position:fixed;
+      inset:0;
+      z-index: 16;
+      pointer-events:none;
+      opacity:0;
+      background:
+        radial-gradient(circle at 30% 35%, rgba(255,255,255,.26) 0 2px, transparent 2px 100%),
+        radial-gradient(circle at 75% 55%, rgba(255,255,255,.24) 0 2px, transparent 2px 100%),
+        radial-gradient(circle at 55% 25%, rgba(255,255,255,.20) 0 1px, transparent 1px 100%);
+      filter: blur(.2px);
+      transition: opacity .12s ease;
+    }
+    .cracks.on{ opacity:1; }
+
+    /* ===== Balloons ===== */
+    .balloon{
+      position:absolute;
+      width: 42px;
+      height: 56px;
+      border-radius: 50%;
+      opacity: .58;
+      will-change: transform;
+      filter: drop-shadow(0 10px 14px rgba(0,0,0,.14));
+      mix-blend-mode: overlay;
+    }
+    .balloon::after{
+      content:"";
+      position:absolute;
+      left:50%;
+      bottom:-14px;
+      width:2px;
+      height: 26px;
+      transform: translateX(-50%);
+      background: rgba(0,0,0,.18);
+      border-radius: 2px;
+      opacity:.7;
+    }
+    /* Heart balloons */
+    .balloon.heart{
+      border-radius: 0;
+      background: none !important;
+      background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><path d='M32 58S6 42 6 22C6 13.7 12.7 7 21 7c4.9 0 9.2 2.4 11 6.1C33.8 9.4 38.1 7 43 7c8.3 0 15 6.7 15 15 0 20-26 36-26 36Z' fill='%23ff4d6d'/><path d='M22 10c-6 0-11 4.9-11 11 0 9.2 10.7 18.4 20.7 24.8C40.8 39.2 53 30 53 21c0-6.1-5-11-11-11-4.5 0-8.4 2.7-10.1 6.6-1.7-3.9-5.6-6.6-9.9-6.6Z' fill='%23ff7aa2' opacity='0.45'/></svg>");
+      background-size: 100% 100%;
+      background-repeat: no-repeat;
+      background-position: center;
+      mix-blend-mode: overlay;
+    }
+
+
+    /* ===== Fullscreen YES mode ===== */
+    .yes-cover{
+      position:fixed !important;
+      left:50% !important;
+      top:50% !important;
+      z-index: 9999 !important;
+      box-shadow: 0 30px 80px rgba(255,77,109,.40), 0 18px 40px rgba(0,0,0,.18) !important;
+    }
+
+    /* ===== Success screen ===== */
+    .yay{
+      position:fixed;
+      inset:0;
+      z-index: 10000;
+      display:grid;
+      place-items:center;
+      text-align:center;
+      padding: 28px;
+      background:
+        radial-gradient(900px 500px at 50% 20%, rgba(255,255,255,.28), transparent 60%),
+        linear-gradient(135deg, var(--bg1), var(--bg2));
+    }
+    .yay h2{
+      margin:0 0 10px;
+      font-size: clamp(2.6rem, 6vw, 4.2rem);
+      color: white;
+      text-shadow: 0 14px 30px rgba(0,0,0,.22);
+    }
+    .yay p{
+      margin:0;
+      font-size: 1.2rem;
+      color: rgba(255,255,255,.92);
+    }
+
+    /* ===== Responsiveness ===== */
+    @media (max-width: 980px){
+      body{ overflow:auto; }
+      #balloonLayer{ position:fixed; }
+      #screen{ min-height: 100svh; height:auto; padding: 16px; }
+      .wrap{
+        grid-template-columns: 1fr;
+        gap: 14px;
+      }
+      .rail{
+      direction: rtl;
+
+        flex-direction: row;
+        overflow:auto;
+        padding-bottom: 6px;
+        scroll-snap-type: x mandatory;
+      }
+      .frame{ min-width: 170px; scroll-snap-align: start; }
+      .centerCard{
+      direction: rtl;
+ order:-1; }
+    }
+
+    @media (prefers-reduced-motion: reduce){
+      .balloon{ display:none; }
+      .hit{ animation:none; }
+    }
+
+  .confetti{
+    position: fixed;
+    top: -10px;
+    width: 10px;
+    height: 16px;
+    border-radius: 2px;
+    pointer-events: none;
+    z-index: 20000;
+    animation: confFall 1.9s linear forwards;
+    transform: translateY(-20px) rotate(0deg);
+    opacity: 0.95;
+  }
+  @keyframes confFall{
+    0% { transform: translateY(-20px) rotate(0deg); opacity: 1; }
+    100% { transform: translateY(calc(100vh + 40px)) rotate(720deg); opacity: 0; }
+  }
+
+  </style>
+</head>
+
+<body>
+  <!-- Put your music file/link here -->
+  <audio id="music" loop preload="auto">
+    <source src="background.mp3" type="audio/mpeg">
+  </audio>
+
+  <div id="balloonLayer" aria-hidden="true"></div>
+
+  <div class="vignette" id="vignette"></div>
+  <div class="cracks" id="cracks"></div>
+
+  <main id="screen">
+    <div class="wrap">
+      <!-- LEFT rail -->
+      <aside class="rail" aria-label="Left gallery">
+        <div class="frame">
+          <div class="mat"><img src="https://whatisxwearing.com/wp-content/uploads/2025/08/nick-wilde-feature-image-768x549.png" alt="Left photo 1"></div>
+          <div class="tag">אהובה</div>
+        </div>
+        <div class="frame">
+          <div class="mat"><img src="rotem.jpeg" alt="Left photo 2"></div>
+          <div class="tag">חמודה</div>
+        </div>
+      </aside>
+
+      <!-- CENTER -->
+      <section class="centerCard">
+        <h1>רותם, תהיי הוולנטיינית שלי?</h1>
+        <p class="subtitle">אגב השקעתי בזה רק שתדעי</p>
+
+        <div class="gif">
+          <img src="https://i.pinimg.com/originals/e4/d0/47/e4d0478548cbe26bee736a44df69e3ef.gif" alt="Valentine gif">
+        </div>
+
+        <div class="buttons">
+          <button id="yes" type="button">כן</button>
+          <button id="no" type="button">לא</button>
+        </div>
+      </section>
+
+      <!-- RIGHT rail -->
+      <aside class="rail" aria-label="Right gallery">
+        <div class="frame">
+          <div class="mat"><img src="dog.jpeg" alt="Right photo 1"></div>
+          <div class="tag">הכי אוהבת</div>
+        </div>
+        <div class="frame">
+          <div class="mat"><img src="bowl.jpeg" alt="Right photo 2"></div>
+          <div class="tag">תחביב</div>
+        </div>
+      </aside>
+    </div>
+  </main>
+
+  <!-- Music control -->
+  <div class="music">
+    <button id="musicBtn" type="button">Pause ❚❚</button>
+    <small id="musicHint">Music on</small>
+  </div>
+
+  <script>
+    /* =========================
+       SETTINGS YOU CAN EDIT
+    ========================== */
+    const MUSIC_START_SECONDS = 140;     // <-- change this (example: 12.5)
+    const MUSIC_VOLUME = 0.4;          // half volume
+    const BALLOON_SPEED_MULT = 0.30;   // slower balloons (lower = slower)
+    const YES_GROW_PER_NO = 0.50;      // faster YES growth each NO click
+
+    /* =========================
+       Music (tries to start by default)
+    ========================== */
+    const music = document.getElementById('music');
+    const musicBtn = document.getElementById('musicBtn');
+    const musicHint = document.getElementById('musicHint');
+
+    let musicOn = true;
+
+    function launchConfetti(durationMs = 1600, pieces = 160){
+  const colors = ["#ff4d6d","#ff7aa2","#ffffff","#ffd166","#06d6a0","#118ab2","#8338ec"];
+  const start = performance.now();
+
+      function burst(){
+        for(let i=0;i<pieces;i++){
+          const c = document.createElement("div");
+          c.className = "confetti";
+          c.style.left = (Math.random() * 100) + "vw";
+          c.style.background = colors[(Math.random()*colors.length)|0];
+          c.style.width = (6 + Math.random()*8) + "px";
+          c.style.height = (10 + Math.random()*14) + "px";
+          c.style.animationDuration = (1.4 + Math.random()*0.9) + "s";
+          c.style.transform = `translateY(-20px) rotate(${Math.random()*360}deg)`;
+          document.body.appendChild(c);
+          setTimeout(()=> c.remove(), 2600);
+        }
+      }
+
+      burst();
+      const timer = setInterval(()=>{
+        if(performance.now() - start > durationMs){ clearInterval(timer); return; }
+        burst();
+      }, 220);
+    }
+
+
+    function reflectMusicUI(){
+      musicBtn.textContent = musicOn ? "Pause ❚❚" : "Play ♪";
+      musicHint.textContent = musicOn ? "Music on" : "Music off";
+    }
+
+    async function startMusicDefault(){
+      try{
+        music.volume = MUSIC_VOLUME;
+        if (!isNaN(MUSIC_START_SECONDS)) music.currentTime = Math.max(0, MUSIC_START_SECONDS);
+        await music.play(); // may be blocked until first user gesture
+        musicOn = true;
+      }catch(e){
+        musicOn = false;
+      }
+      reflectMusicUI();
+    }
+
+    async function toggleMusic(){
+      try{
+        if(!musicOn){
+          await music.play();
+          musicOn = true;
+        }else{
+          music.pause();
+          musicOn = false;
+        }
+      }catch(e){}
+      reflectMusicUI();
+    }
+
+    musicBtn.addEventListener('click', toggleMusic);
+
+    // Attempt autoplay on load
+    startMusicDefault();
+
+    // If autoplay blocked, first user gesture will start it
+    document.addEventListener('pointerdown', () => {
+      if(!musicOn) startMusicDefault();
+    }, { once:true });
+
+    /* =========================
+       Balloons: slower physics behind everything
+    ========================== */
+    const layer = document.getElementById('balloonLayer');
+    const balloons = [];
+    const BALLOON_COUNT = 40;
+
+    const palette = [
+      ["#ff4d6d", "#ff7aa2"],
+      ["#ff7f50", "#ffb199"],
+      ["#8a2be2", "#c19bff"],
+      ["#00bcd4", "#7ee8ff"],
+      ["#ffcc00", "#fff3a0"],
+      ["#7cfc00", "#b9ff7a"]
+    ];
+
+    function rand(min, max){ return min + Math.random()*(max-min); }
+
+    function createBalloon(){
+      const el = document.createElement('div');
+      el.className = 'balloon';
+      const isHeart = Math.random() < 0.28;
+      if(isHeart) el.classList.add('heart');
+
+      const colors = palette[Math.floor(Math.random()*palette.length)];
+      const c1 = colors[0], c2 = colors[1];
+      const w = rand(30, 54);
+      const h = w * rand(1.2, 1.42);
+
+      el.style.width = w + "px";
+      el.style.height = h + "px";
+      el.style.opacity = rand(0.35, 0.70).toFixed(2);
+
+      if(!isHeart){
+      el.style.background =
+        "radial-gradient(circle at 30% 25%, rgba(255,255,255,.85), rgba(255,255,255,0) 36%)," +
+        "linear-gradient(135deg, " + c1 + ", " + c2 + ")";
+    }
+
+      layer.appendChild(el);
+
+      const dir = Math.random() < 0.68 ? -1 : 1;
+      const buoy = rand(0.010, 0.032) * dir * BALLOON_SPEED_MULT;
+
+      return {
+        el,
+        x: rand(0, window.innerWidth),
+        y: rand(0, window.innerHeight),
+        vx: rand(-0.25, 0.25) * BALLOON_SPEED_MULT,
+        vy: rand(-0.15, 0.15) * BALLOON_SPEED_MULT,
+        buoy,
+        drag: rand(0.985, 0.993), // more damping (slower)
+        wobble: rand(0.6, 1.2),
+        wobPhase: rand(0, Math.PI*2)
+      };
+    }
+
+    for(let i=0;i<BALLOON_COUNT;i++) balloons.push(createBalloon());
+
+    const pointer = { x: window.innerWidth/2, y: window.innerHeight/2, vx: 0, vy: 0, active:false };
+    let lastPX = pointer.x, lastPY = pointer.y, lastPT = performance.now();
+
+    function setPointer(x,y){
+      const now = performance.now();
+      const dt = Math.max(8, now - lastPT);
+      pointer.vx = (x - lastPX) / dt;
+      pointer.vy = (y - lastPY) / dt;
+      pointer.x = x; pointer.y = y;
+      pointer.active = true;
+      lastPX = x; lastPY = y; lastPT = now;
+    }
+
+    window.addEventListener('pointermove', (e)=> setPointer(e.clientX, e.clientY), { passive:true });
+    window.addEventListener('pointerdown', (e)=> setPointer(e.clientX, e.clientY), { passive:true });
+    window.addEventListener('pointerleave', ()=> pointer.active=false);
+
+    let lastT = performance.now();
+    function tick(t){
+      const dtRaw = Math.min(22, t - lastT);
+      lastT = t;
+
+      // slow down everything uniformly
+      const dt = dtRaw * BALLOON_SPEED_MULT;
+
+      const w = window.innerWidth;
+      const h = window.innerHeight;
+
+      for(const b of balloons){
+        b.vy += b.buoy * dt;
+        b.vx += Math.sin((t*0.001*b.wobble) + b.wobPhase) * 0.0015 * dt;
+
+        if(pointer.active){
+          const dx = b.x - pointer.x;
+          const dy = b.y - pointer.y;
+          const dist = Math.sqrt(dx*dx + dy*dy) || 1;
+
+          const influence = 190;
+          if(dist < influence){
+            const nx = dx / dist;
+            const ny = dy / dist;
+
+            // smaller forces (slower feel)
+            const f = (influence - dist) * 0.0075 * BALLOON_SPEED_MULT;
+
+            const pv = Math.sqrt(pointer.vx*pointer.vx + pointer.vy*pointer.vy);
+            const kick = Math.min(0.9, pv * 28) * BALLOON_SPEED_MULT;
+
+            b.vx += nx * f * dt + pointer.vx * kick;
+            b.vy += ny * f * dt + pointer.vy * kick;
+          }
+        }
+
+        b.vx *= b.drag;
+        b.vy *= b.drag;
+
+        b.x += b.vx * dtRaw;
+        b.y += b.vy * dtRaw;
+
+        const pad = 90;
+        if(b.x < -pad) b.x = w + pad;
+        if(b.x > w + pad) b.x = -pad;
+        if(b.y < -pad) b.y = h + pad;
+        if(b.y > h + pad) b.y = -pad;
+
+        b.el.style.transform = "translate3d(" + b.x + "px," + b.y + "px,0)";
+      }
+
+      requestAnimationFrame(tick);
+    }
+    requestAnimationFrame(tick);
+
+    /* =========================
+       Buttons: YES grows to fullscreen and covers NO
+    ========================== */
+    const yes = document.getElementById('yes');
+    const no = document.getElementById('no');
+    const screen = document.getElementById('screen');
+    const vignette = document.getElementById('vignette');
+    const cracks = document.getElementById('cracks');
+
+    const noTexts = [
+      "נו בחייאת",
+      "בבקשה??",
+      "בטוחה?",
+      "אל תעשי לי את זה",
+      "יאללה תגידי כן",
+      "למה ככה?",
+      "נו רותםםם",
+      "תסמני כן וזהו ",
+      "אני אהיה הכי נחמד ",
+      "זו התשובה הסופית? ",
+      "את הבן אדם האהוב עליי שתדעי",
+      "אוקיי... הזדמנות אחרונה ",
+      "נווווו",
+      "בניתי את זה בשבילך",
+      "כן זו התשובה הנכונה",
+      "מחילה אבל אני לא מוותר",
+      "יאללההה די",
+      "רק פעם אחת כן"
+    ];
+
+    let noClicks = 0;
+    let coverMode = false;
+
+    let baseW = 0;
+    let baseH = 0;
+
+    function hitEffect(){
+      screen.classList.add('hit');
+      vignette.classList.add('on');
+      cracks.classList.add('on');
+      setTimeout(()=> {
+        screen.classList.remove('hit');
+        vignette.classList.remove('on');
+        cracks.classList.remove('on');
+      }, 190);
+    }
+
+    function ensureCoverMode(){
+      if(coverMode) return;
+      coverMode = true;
+
+      // store untransformed size (offsetWidth/Height ignore transforms)
+      baseW = Math.max(1, yes.offsetWidth);
+      baseH = Math.max(1, yes.offsetHeight);
+
+      // detach from layout so it can cover the whole screen
+      yes.classList.add('yes-cover');
+    }
+
+    function scaleToCover(){
+      ensureCoverMode();
+
+      const needed = Math.max(window.innerWidth / baseW, window.innerHeight / baseH) * 1.08;
+
+      // NO CAP: keep growing forever
+      const s = 1 + noClicks * YES_GROW_PER_NO;
+
+      yes.style.transform = "translate(-50%, -50%) scale(" + s + ")";
+
+      // when it truly covers the screen, NO becomes unclickable under it
+      if(s >= needed){
+        no.style.pointerEvents = "none";
+      }
+    }
+    
+
+    no.addEventListener('click', ()=>{
+      noClicks++;
+
+      // font morph
+      const fonts = ["Poppins, sans-serif", "Pacifico, cursive", "Comic Neue, cursive"];
+      yes.style.fontFamily = fonts[noClicks % fonts.length];
+
+      // keep text readable as it grows
+      yes.style.fontSize = (1.08 + Math.min(1.2, noClicks * 0.09)) + "rem";
+
+      // update NO copy
+      no.textContent = noTexts[noClicks % noTexts.length];
+
+      // cover growth
+      scaleToCover();
+
+      hitEffect();
+    });
+
+    yes.addEventListener('click', ()=>{
+      const yay = document.createElement('div');
+      launchConfetti();
+      yay.className = 'yay';
+      yay.innerHTML =
+        "<div>" +
+          "<h2>יששש נתראה בשבת</h2>" +
+          "<p>סוף סוף בחרת נכון </p>" +
+        "</div>";
+      document.body.appendChild(yay);
+    });
+  </script>
+</body>
+</html>
